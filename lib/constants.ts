@@ -6,8 +6,9 @@ export const PROVINCIAS_ANGOLA = [
 ];
 
 export const NIVEIS = [
-  { value: 'Médio',        label: 'Ensino Médio'   },
-  { value: 'Universidade', label: 'Universidade'   },
+  { value: 'Universidade', label: '🎓 Universidade' },
+  { value: 'Médio',        label: '📚 Ensino Médio'  },
+  { value: 'Finalista',   label: '🏆 Finalista'      },
 ];
 
 export const CLASSES_MEDIO = [

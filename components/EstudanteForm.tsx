@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 import { EstudanteInsert, Estudante } from '@/types';
-import { PROVINCIAS_ANGOLA, ANOS_UNIVERSIDADE, CLASSES_MEDIO } from '@/lib/constants';
+import { PROVINCIAS_ANGOLA, ANOS_UNIVERSIDADE, CLASSES_MEDIO, NIVEIS } from '@/lib/constants';
 import { Save, ArrowLeft, Loader2 } from 'lucide-react';
 
 interface Props {
@@ -23,7 +23,9 @@ function onBlur(e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLT
   e.target.style.background  = '#f8fafc';
 }
 
-function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+function Field({ label, required, children }: {
+  label: string; required?: boolean; children: React.ReactNode;
+}) {
   return (
     <div>
       <label className="block text-sm font-semibold text-slate-700 mb-1.5">
@@ -44,7 +46,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export default function EstudanteForm({ initialData, mode }: Props) {
-  const router  = useRouter();
+  const router   = useRouter();
   const supabase = createClient();
   const [saving, setSaving]   = useState(false);
   const [error, setError]     = useState('');
@@ -67,7 +69,6 @@ export default function EstudanteForm({ initialData, mode }: Props) {
     setError('');
   }
 
-  // Quando muda o nível, limpa o ano_classe
   function handleNivelChange(value: string) {
     setForm(f => ({ ...f, nivel: value as any, ano_classe: '' }));
     setError('');
@@ -75,10 +76,18 @@ export default function EstudanteForm({ initialData, mode }: Props) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.nome.trim() || !form.telefone.trim() || !form.ano_classe || !form.provincia) {
-      setError('Preenche os campos obrigatórios: Nome, Telefone, Ano/Classe e Província.');
+
+    if (!form.nome.trim() || !form.telefone.trim() || !form.provincia) {
+      setError('Preenche os campos obrigatórios: Nome, Telefone e Província.');
       return;
     }
+
+    // Ano/classe obrigatório só para Médio e Universidade
+    if ((form.nivel === 'Médio' || form.nivel === 'Universidade') && !form.ano_classe) {
+      setError(`Selecciona a ${form.nivel === 'Médio' ? 'Classe' : 'Ano'}.`);
+      return;
+    }
+
     setSaving(true);
     setError('');
 
@@ -87,8 +96,8 @@ export default function EstudanteForm({ initialData, mode }: Props) {
       telefone:     form.telefone.trim(),
       nivel:        form.nivel,
       ano_classe:   form.ano_classe,
-      universidade: form.nivel === 'Universidade' ? (form.universidade?.trim() || '') : '',
-      curso:        form.nivel === 'Universidade' ? (form.curso?.trim() || '') : '',
+      universidade: form.nivel !== 'Médio' ? (form.universidade?.trim() || '') : '',
+      curso:        form.nivel !== 'Médio' ? (form.curso?.trim()        || '') : '',
       provincia:    form.provincia,
       status:       form.status,
       observacoes:  form.observacoes?.trim() || '',
@@ -105,8 +114,6 @@ export default function EstudanteForm({ initialData, mode }: Props) {
     setSuccess(true);
     setTimeout(() => router.push('/estudantes'), 1200);
   }
-
-  const isUniversidade = form.nivel === 'Universidade';
 
   return (
     <div className="p-6 lg:p-8 animate-fade-in">
@@ -132,28 +139,34 @@ export default function EstudanteForm({ initialData, mode }: Props) {
 
       <form onSubmit={handleSubmit} className="max-w-2xl">
 
-        {/* Dados pessoais */}
+        {/* Dados Pessoais */}
         <Section title="Dados Pessoais">
           <div className="sm:col-span-2">
             <Field label="Nome Completo" required>
-              <input value={form.nome} onChange={e => set('nome', e.target.value)}
+              <input
+                value={form.nome} onChange={e => set('nome', e.target.value)}
                 placeholder="Nome completo do estudante"
-                className={inputCls} onFocus={onFocus} onBlur={onBlur} />
+                className={inputCls} onFocus={onFocus} onBlur={onBlur}
+              />
             </Field>
           </div>
           <Field label="Nº de Telefone" required>
-            <input value={form.telefone} onChange={e => set('telefone', e.target.value)}
+            <input
+              value={form.telefone} onChange={e => set('telefone', e.target.value)}
               placeholder="9XX XXX XXX" type="tel"
-              className={inputCls} onFocus={onFocus} onBlur={onBlur} />
+              className={inputCls} onFocus={onFocus} onBlur={onBlur}
+            />
           </Field>
           <Field label="Província" required>
-            <select value={form.provincia} onChange={e => set('provincia', e.target.value)}
+            <select
+              value={form.provincia} onChange={e => set('provincia', e.target.value)}
               className={inputCls} onFocus={onFocus} onBlur={onBlur}>
               {PROVINCIAS_ANGOLA.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
           </Field>
           <Field label="Status">
-            <select value={form.status} onChange={e => set('status', e.target.value as any)}
+            <select
+              value={form.status} onChange={e => set('status', e.target.value as any)}
               className={inputCls} onFocus={onFocus} onBlur={onBlur}>
               <option value="Activo">Activo</option>
               <option value="Inactivo">Inactivo</option>
@@ -162,7 +175,7 @@ export default function EstudanteForm({ initialData, mode }: Props) {
           </Field>
         </Section>
 
-        {/* Dados académicos */}
+        {/* Dados Académicos */}
         <Section title="Dados Académicos">
 
           {/* Toggle nível */}
@@ -171,10 +184,7 @@ export default function EstudanteForm({ initialData, mode }: Props) {
               Nível de Ensino <span className="text-red-500">*</span>
             </label>
             <div className="flex gap-2">
-              {[
-                { value: 'Universidade', label: '🎓 Universidade' },
-                { value: 'Médio',        label: '📚 Ensino Médio'  },
-              ].map(opt => (
+              {NIVEIS.map(opt => (
                 <button
                   key={opt.value} type="button"
                   onClick={() => handleNivelChange(opt.value)}
@@ -190,34 +200,63 @@ export default function EstudanteForm({ initialData, mode }: Props) {
             </div>
           </div>
 
-          {/* Classe (Médio) ou Ano (Universidade) */}
-          <Field label={isUniversidade ? 'Ano' : 'Classe'} required>
-            <select value={form.ano_classe} onChange={e => set('ano_classe', e.target.value)}
-              className={inputCls} onFocus={onFocus} onBlur={onBlur}>
-              <option value="">Seleccionar...</option>
-              {(isUniversidade ? ANOS_UNIVERSIDADE : CLASSES_MEDIO).map(a => (
-                <option key={a} value={a}>{a}</option>
-              ))}
-            </select>
-          </Field>
+          {/* Classe — só Ensino Médio */}
+          {form.nivel === 'Médio' && (
+            <Field label="Classe" required>
+              <select
+                value={form.ano_classe} onChange={e => set('ano_classe', e.target.value)}
+                className={inputCls} onFocus={onFocus} onBlur={onBlur}>
+                <option value="">Seleccionar classe...</option>
+                {CLASSES_MEDIO.map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
+            </Field>
+          )}
 
-          {/* Campos só para universidade */}
-          {isUniversidade && (
+          {/* Ano — só Universidade */}
+          {form.nivel === 'Universidade' && (
+            <Field label="Ano" required>
+              <select
+                value={form.ano_classe} onChange={e => set('ano_classe', e.target.value)}
+                className={inputCls} onFocus={onFocus} onBlur={onBlur}>
+                <option value="">Seleccionar ano...</option>
+                {ANOS_UNIVERSIDADE.map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
+            </Field>
+          )}
+
+          {/* Ano de conclusão — só Finalista */}
+          {form.nivel === 'Finalista' && (
+            <Field label="Ano de Conclusão">
+              <input
+                value={form.ano_classe} onChange={e => set('ano_classe', e.target.value)}
+                placeholder="ex: 2024"
+                className={inputCls} onFocus={onFocus} onBlur={onBlur}
+              />
+            </Field>
+          )}
+
+          {/* Universidade e Curso — para Universidade e Finalista */}
+          {(form.nivel === 'Universidade' || form.nivel === 'Finalista') && (
             <>
               <Field label="Universidade / Instituto">
-                <input value={form.universidade} onChange={e => set('universidade', e.target.value)}
+                <input
+                  value={form.universidade} onChange={e => set('universidade', e.target.value)}
                   placeholder="ex: UAN, UCAN, ISPTEC"
-                  className={inputCls} onFocus={onFocus} onBlur={onBlur} />
+                  className={inputCls} onFocus={onFocus} onBlur={onBlur}
+                />
               </Field>
               <div className="sm:col-span-2">
                 <Field label="Curso">
-                  <input value={form.curso} onChange={e => set('curso', e.target.value)}
+                  <input
+                    value={form.curso} onChange={e => set('curso', e.target.value)}
                     placeholder="ex: Enfermagem, Direito, Eng. Informática"
-                    className={inputCls} onFocus={onFocus} onBlur={onBlur} />
+                    className={inputCls} onFocus={onFocus} onBlur={onBlur}
+                  />
                 </Field>
               </div>
             </>
           )}
+
         </Section>
 
         {/* Observações */}
@@ -226,7 +265,8 @@ export default function EstudanteForm({ initialData, mode }: Props) {
           <textarea
             value={form.observacoes} onChange={e => set('observacoes', e.target.value)}
             rows={3} placeholder="Notas adicionais..."
-            className={`${inputCls} resize-none`} onFocus={onFocus} onBlur={onBlur} />
+            className={`${inputCls} resize-none`} onFocus={onFocus} onBlur={onBlur}
+          />
         </div>
 
         {error && (
@@ -252,6 +292,7 @@ export default function EstudanteForm({ initialData, mode }: Props) {
             Cancelar
           </button>
         </div>
+
       </form>
     </div>
   );

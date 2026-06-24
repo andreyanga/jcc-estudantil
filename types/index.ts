@@ -1,5 +1,5 @@
 export type EstudanteStatus = 'Activo' | 'Inactivo' | 'Empregado';
-export type EstudanteNivel  = 'Médio' | 'Universidade';
+export type EstudanteNivel  = 'Médio' | 'Universidade' | 'Finalista';
 export type BolsaTipo       = 'Parcial' | 'Integral';
 export type BolsaStatus     = 'Activa' | 'Suspensa' | 'Concluída';
 

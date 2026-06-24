@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase';
 import { exportToExcel } from '@/lib/excel';
 import { Estudante } from '@/types';
-import { PROVINCIAS_ANGOLA } from '@/lib/constants';
+import { PROVINCIAS_ANGOLA, CLASSES_MEDIO, ANOS_UNIVERSIDADE } from '@/lib/constants';
 import StatusBadge from '@/components/StatusBadge';
 import NivelBadge from '@/components/NivelBadge';
 import { Search, Download, Plus, Eye, Pencil, Trash2, Filter, X } from 'lucide-react';
@@ -25,12 +25,13 @@ export default function EstudantesPage() {
   const [filtroStatus, setFiltroStatus] = useState('');
   const [filtroProv, setFiltroProv]     = useState('');
   const [filtroNivel, setFiltroNivel]   = useState('');
-  const [page, setPage]             = useState(1);
+  const [filtroAno, setFiltroAno]       = useState('');
+  const [page, setPage]                 = useState(1);
   const [showFiltros, setShowFiltros]   = useState(false);
   const [verEstudante, setVerEstudante] = useState<Estudante | null>(null);
-  const [deleteId, setDeleteId]     = useState<string | null>(null);
-  const [deleteNome, setDeleteNome] = useState('');
-  const [deleting, setDeleting]     = useState(false);
+  const [deleteId, setDeleteId]         = useState<string | null>(null);
+  const [deleteNome, setDeleteNome]     = useState('');
+  const [deleting, setDeleting]         = useState(false);
 
   const supabase = createClient();
 
@@ -54,19 +55,21 @@ export default function EstudantesPage() {
         (e.curso || '').toLowerCase().includes(q)
       );
     }
-    if (filtroStatus) lista = lista.filter(e => e.status === filtroStatus);
+    if (filtroStatus) lista = lista.filter(e => e.status    === filtroStatus);
     if (filtroProv)   lista = lista.filter(e => e.provincia === filtroProv);
-    if (filtroNivel)  lista = lista.filter(e => e.nivel === filtroNivel);
+    if (filtroNivel)  lista = lista.filter(e => e.nivel     === filtroNivel);
+    if (filtroAno)    lista = lista.filter(e => e.ano_classe === filtroAno);
     setFiltered(lista);
     setPage(1);
-  }, [estudantes, search, filtroStatus, filtroProv, filtroNivel]);
+  }, [estudantes, search, filtroStatus, filtroProv, filtroNivel, filtroAno]);
 
   const totalPages = Math.ceil(filtered.length / PER_PAGE);
   const pageData   = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-  const temFiltros = search || filtroStatus || filtroProv || filtroNivel;
+  const temFiltros = search || filtroStatus || filtroProv || filtroNivel || filtroAno;
 
   function limparFiltros() {
-    setSearch(''); setFiltroStatus(''); setFiltroProv(''); setFiltroNivel('');
+    setSearch(''); setFiltroStatus(''); setFiltroProv('');
+    setFiltroNivel(''); setFiltroAno('');
   }
 
   async function handleDelete() {
@@ -120,7 +123,7 @@ export default function EstudantesPage() {
         </div>
       </div>
 
-      {/* Barra de pesquisa e filtros */}
+      {/* Pesquisa e filtros */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm mb-5">
         <div className="p-4 flex gap-3 flex-wrap">
           <div className="flex-1 min-w-48 relative">
@@ -155,34 +158,49 @@ export default function EstudantesPage() {
         </div>
 
         {showFiltros && (
-          <div className="px-4 pb-4 pt-3 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <select
-              value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)}
+          <div className="px-4 pb-4 pt-3 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+
+            {/* Status */}
+            <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)}
               className="px-3 py-2.5 border-2 border-slate-200 rounded-xl text-sm bg-slate-50 text-slate-700 focus:outline-none transition-all"
-              onFocus={inputFocus} onBlur={inputBlur}
-            >
+              onFocus={inputFocus} onBlur={inputBlur}>
               <option value="">Todos os status</option>
               <option>Activo</option>
               <option>Inactivo</option>
               <option>Empregado</option>
             </select>
-            <select
-              value={filtroNivel} onChange={e => setFiltroNivel(e.target.value)}
+
+            {/* Nível */}
+            <select value={filtroNivel} onChange={e => setFiltroNivel(e.target.value)}
               className="px-3 py-2.5 border-2 border-slate-200 rounded-xl text-sm bg-slate-50 text-slate-700 focus:outline-none transition-all"
-              onFocus={inputFocus} onBlur={inputBlur}
-            >
+              onFocus={inputFocus} onBlur={inputBlur}>
               <option value="">Todos os níveis</option>
               <option value="Médio">Ensino Médio</option>
               <option value="Universidade">Universidade</option>
+              <option value="Finalista">Finalista</option>
             </select>
-            <select
-              value={filtroProv} onChange={e => setFiltroProv(e.target.value)}
+
+            {/* Província */}
+            <select value={filtroProv} onChange={e => setFiltroProv(e.target.value)}
               className="px-3 py-2.5 border-2 border-slate-200 rounded-xl text-sm bg-slate-50 text-slate-700 focus:outline-none transition-all"
-              onFocus={inputFocus} onBlur={inputBlur}
-            >
+              onFocus={inputFocus} onBlur={inputBlur}>
               <option value="">Todas as províncias</option>
               {PROVINCIAS_ANGOLA.map(p => <option key={p}>{p}</option>)}
             </select>
+
+            {/* Ano / Classe */}
+            <select value={filtroAno} onChange={e => setFiltroAno(e.target.value)}
+              className="px-3 py-2.5 border-2 border-slate-200 rounded-xl text-sm bg-slate-50 text-slate-700 focus:outline-none transition-all"
+              onFocus={inputFocus} onBlur={inputBlur}>
+              <option value="">Todos os anos/classes</option>
+              <optgroup label="── Ensino Médio">
+                {CLASSES_MEDIO.map(c => <option key={c} value={c}>{c}</option>)}
+              </optgroup>
+              <optgroup label="── Universidade">
+                {ANOS_UNIVERSIDADE.map(a => <option key={a} value={a}>{a}</option>)}
+              </optgroup>
+            </select>
+
           </div>
         )}
       </div>
@@ -232,7 +250,7 @@ export default function EstudantesPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                          style={{ background: '#1a7a34' }}>
+                          style={{ background: e.nivel === 'Finalista' ? '#6d28d9' : '#1a7a34' }}>
                           {initials(e.nome)}
                         </div>
                         <div className="min-w-0">
@@ -289,7 +307,8 @@ export default function EstudantesPage() {
                   className="w-8 h-8 rounded-lg border text-xs flex items-center justify-center transition-all"
                   style={page === p
                     ? { background: '#1a7a34', color: 'white', borderColor: '#1a7a34' }
-                    : { borderColor: '#e2e8f0' }}>
+                    : { borderColor: '#e2e8f0' }
+                  }>
                   {p}
                 </button>
               ))}
@@ -307,12 +326,12 @@ export default function EstudantesPage() {
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           onClick={() => setVerEstudante(null)}>
           <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl animate-fade-in"
-            onClick={e => e.stopPropagation()}>
+            onClick={ex => ex.stopPropagation()}>
             <div className="p-6">
               <div className="flex items-start justify-between mb-5">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold"
-                    style={{ background: '#1a7a34' }}>
+                    style={{ background: verEstudante.nivel === 'Finalista' ? '#6d28d9' : '#1a7a34' }}>
                     {initials(verEstudante.nome)}
                   </div>
                   <div>
@@ -320,9 +339,11 @@ export default function EstudantesPage() {
                       {verEstudante.nome}
                     </h3>
                     <div className="text-xs text-slate-400">
-                      {verEstudante.nivel === 'Universidade'
-                        ? verEstudante.universidade || 'Sem universidade'
-                        : 'Ensino Médio'}
+                      {verEstudante.nivel === 'Médio'
+                        ? 'Ensino Médio'
+                        : verEstudante.nivel === 'Finalista'
+                        ? '🏆 Finalista'
+                        : verEstudante.universidade || 'Sem universidade'}
                     </div>
                   </div>
                 </div>
@@ -330,14 +351,15 @@ export default function EstudantesPage() {
                   <X size={20} />
                 </button>
               </div>
+
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { l: 'Telefone',   v: verEstudante.telefone },
-                  { l: 'Província',  v: verEstudante.provincia },
-                  { l: 'Nível',      v: verEstudante.nivel },
-                  { l: 'Ano/Classe', v: verEstudante.ano_classe || '—' },
-                  { l: 'Universidade', v: verEstudante.universidade || '—' },
-                  { l: 'Curso',      v: verEstudante.curso || '—' },
+                  { l: 'Telefone',      v: verEstudante.telefone },
+                  { l: 'Província',     v: verEstudante.provincia },
+                  { l: 'Nível',         v: verEstudante.nivel },
+                  { l: 'Ano/Classe',    v: verEstudante.ano_classe || '—' },
+                  { l: 'Universidade',  v: verEstudante.universidade || '—' },
+                  { l: 'Curso',         v: verEstudante.curso || '—' },
                 ].map(({ l, v }) => (
                   <div key={l} className="bg-slate-50 rounded-xl p-3">
                     <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{l}</div>
@@ -351,6 +373,7 @@ export default function EstudantesPage() {
                   </div>
                 )}
               </div>
+
               <div className="flex gap-2 mt-5">
                 <button
                   onClick={() => { router.push(`/estudantes/${verEstudante.id}/editar`); setVerEstudante(null); }}
@@ -398,6 +421,7 @@ export default function EstudantesPage() {
           </div>
         </div>
       )}
+
     </div>
   );
 }

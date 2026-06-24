@@ -8,21 +8,25 @@ function initials(nome: string) {
   return nome.split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
 }
 
-function StatCard({ value, label, icon, cor }: { value: number; label: string; icon: string; cor: string }) {
+function StatCard({ value, label, icon, cor, sub }: {
+  value: number; label: string; icon: string; cor: string; sub?: string;
+}) {
   const cores: Record<string, { bg: string; text: string }> = {
-    green:  { bg: 'bg-green-50 border-green-100',  text: '#1a7a34' },
-    blue:   { bg: 'bg-blue-50 border-blue-100',    text: '#1d4ed8' },
+    green:  { bg: 'bg-green-50 border-green-100',   text: '#1a7a34' },
+    blue:   { bg: 'bg-blue-50 border-blue-100',     text: '#1d4ed8' },
     purple: { bg: 'bg-purple-50 border-purple-100', text: '#6d28d9' },
-    amber:  { bg: 'bg-amber-50 border-amber-100',  text: '#92400e' },
+    amber:  { bg: 'bg-amber-50 border-amber-100',   text: '#92400e' },
+    rose:   { bg: 'bg-rose-50 border-rose-100',     text: '#be123c' },
   };
   const c = cores[cor];
   return (
     <div className={`rounded-2xl border p-5 ${c.bg}`}>
       <div className="text-2xl mb-3">{icon}</div>
-      <div className="text-3xl font-bold mb-1" style={{ color: c.text, fontFamily: 'Sora, sans-serif' }}>
+      <div className="text-3xl font-bold mb-0.5" style={{ color: c.text, fontFamily: 'Sora, sans-serif' }}>
         {value}
       </div>
-      <div className="text-sm text-slate-500 font-medium">{label}</div>
+      <div className="text-sm font-semibold text-slate-700">{label}</div>
+      {sub && <div className="text-xs text-slate-400 mt-0.5">{sub}</div>}
     </div>
   );
 }
@@ -38,12 +42,21 @@ export default async function DashboardPage() {
   const total      = lista.length;
   const superior   = lista.filter(e => e.nivel === 'Universidade').length;
   const medio      = lista.filter(e => e.nivel === 'Médio').length;
+  const finalistas = lista.filter(e => e.nivel === 'Finalista').length;
   const empregados = lista.filter(e => e.status === 'Empregado').length;
 
   // Distribuição por província
   const porProv: Record<string, number> = {};
   lista.forEach(e => { porProv[e.provincia] = (porProv[e.provincia] || 0) + 1; });
   const topProv = Object.entries(porProv).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+  // Distribuição por nível
+  const nivelDist = [
+    { label: 'Universidade', value: superior,   cor: '#1a7a34', bg: '#e8f5ec' },
+    { label: 'Ensino Médio', value: medio,      cor: '#6d28d9', bg: '#f3f0ff' },
+    { label: 'Finalistas',   value: finalistas, cor: '#92400e', bg: '#fffbeb' },
+    { label: 'Empregados',   value: empregados, cor: '#be123c', bg: '#fff1f2' },
+  ];
 
   const recentes = lista.slice(0, 6);
 
@@ -61,12 +74,17 @@ export default async function DashboardPage() {
         <p className="text-slate-400 text-sm ml-4">Visão geral da Comissão Estudantil da JCC</p>
       </div>
 
-      {/* Cards de estatística */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard value={total}      label="Total de Estudantes" icon="👥" cor="green"  />
-        <StatCard value={superior}   label="Universidade"        icon="🎓" cor="blue"   />
-        <StatCard value={medio}      label="Ensino Médio"        icon="📚" cor="purple" />
-        <StatCard value={empregados} label="Empregados"          icon="💼" cor="amber"  />
+      {/* Cards principais — linha 1 */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+        <StatCard value={total}      label="Total de Estudantes" icon="👥" cor="green"  sub="Todos os registos"         />
+        <StatCard value={superior}   label="Universidade"        icon="🎓" cor="blue"   sub={`${Math.round(superior/total*100||0)}% do total`} />
+        <StatCard value={medio}      label="Ensino Médio"        icon="📚" cor="purple" sub={`${Math.round(medio/total*100||0)}% do total`}    />
+      </div>
+
+      {/* Cards — linha 2 */}
+      <div className="grid grid-cols-2 lg:grid-cols-2 gap-4 mb-8">
+        <StatCard value={finalistas} label="Finalistas"          icon="🏆" cor="amber"  sub={`${Math.round(finalistas/total*100||0)}% do total`} />
+        <StatCard value={empregados} label="Empregados"          icon="💼" cor="rose"   sub={`${Math.round(empregados/total*100||0)}% do total`}  />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -89,31 +107,58 @@ export default async function DashboardPage() {
                   Cadastrar agora
                 </Link>
               </div>
-            ) : (
-              recentes.map(e => (
-                <div key={e.id} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition-colors">
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                    style={{ background: '#1a7a34' }}>
-                    {initials(e.nome)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-slate-800 text-sm truncate">{e.nome}</div>
-                    <div className="text-xs text-slate-400">
-                      {e.nivel === 'Universidade' ? (e.universidade || 'Sem universidade') : 'Ensino Médio'} · {e.provincia}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <NivelBadge nivel={e.nivel} ano_classe={e.ano_classe} />
-                    <StatusBadge status={e.status} />
+            ) : recentes.map(e => (
+              <div key={e.id} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition-colors">
+                <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                  style={{ background: e.nivel === 'Finalista' ? '#92400e' : e.nivel === 'Médio' ? '#6d28d9' : '#1a7a34' }}>
+                  {initials(e.nome)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-slate-800 text-sm truncate">{e.nome}</div>
+                  <div className="text-xs text-slate-400">
+                    {e.nivel === 'Universidade'
+                      ? e.universidade || 'Sem universidade'
+                      : e.nivel === 'Finalista'
+                      ? `🏆 Finalista · ${e.universidade || 'Sem universidade'}`
+                      : '📚 Ensino Médio'
+                    } · {e.provincia}
                   </div>
                 </div>
-              ))
-            )}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <NivelBadge nivel={e.nivel} ano_classe={e.ano_classe} />
+                  <StatusBadge status={e.status} />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
         {/* Coluna direita */}
         <div className="space-y-5">
+
+          {/* Distribuição por nível */}
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+            <h2 className="font-bold text-slate-800 mb-4" style={{ fontFamily: 'Sora, sans-serif' }}>
+              Por Nível
+            </h2>
+            <div className="space-y-3">
+              {nivelDist.filter(n => n.value > 0).map(n => (
+                <div key={n.label}>
+                  <div className="flex justify-between text-xs mb-1">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full" style={{ background: n.cor }} />
+                      <span className="font-medium text-slate-700">{n.label}</span>
+                    </div>
+                    <span className="font-bold text-slate-800">{n.value}</span>
+                  </div>
+                  <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all"
+                      style={{ width: `${Math.round(n.value / total * 100)}%`, background: n.cor }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
 
           {/* Distribuição por província */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
@@ -129,11 +174,9 @@ export default async function DashboardPage() {
                     <span className="font-medium text-slate-700">{prov}</span>
                     <span className="text-slate-400">{count}</span>
                   </div>
-                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${Math.round(count / total * 100)}%`, background: '#1a7a34' }}
-                    />
+                  <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full"
+                      style={{ width: `${Math.round(count / total * 100)}%`, background: '#1a7a34' }} />
                   </div>
                 </div>
               ))}
@@ -158,6 +201,10 @@ export default async function DashboardPage() {
               <Link href="/bolsas"
                 className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-sm font-semibold border border-slate-200 transition-all">
                 🎓 Gestão de Bolsas
+              </Link>
+              <Link href="/analiticas"
+                className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-sm font-semibold border border-slate-200 transition-all">
+                📊 Análises & Relatórios
               </Link>
             </div>
           </div>
