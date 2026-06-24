@@ -1,8 +1,9 @@
 'use client';
 import { useState } from 'react';
-import { Menu, X } from 'lucide-react';
-import { usePathname } from 'next/navigation';
+import { Menu, X, LogOut } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase';
 
 const NAV = [
   { href: '/dashboard',  label: 'Dashboard',             emoji: '🏠' },
@@ -14,6 +15,14 @@ const NAV = [
 export default function MobileHeader() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/login');
+    router.refresh();
+  }
 
   return (
     <div className="lg:hidden">
@@ -34,10 +43,7 @@ export default function MobileHeader() {
           >
             J
           </div>
-          <span
-            className="font-bold text-slate-800 text-sm"
-            style={{ fontFamily: 'Sora, sans-serif' }}
-          >
+          <span className="font-bold text-slate-800 text-sm" style={{ fontFamily: 'Sora, sans-serif' }}>
             JCC Estudantil
           </span>
         </div>
@@ -65,10 +71,7 @@ export default function MobileHeader() {
                 JCC
               </div>
               <div>
-                <div
-                  className="font-bold text-slate-900 text-sm"
-                  style={{ fontFamily: 'Sora, sans-serif' }}
-                >
+                <div className="font-bold text-slate-900 text-sm" style={{ fontFamily: 'Sora, sans-serif' }}>
                   JCC Estudantil
                 </div>
                 <div className="text-xs text-slate-400">Comissão Estudantil</div>
@@ -112,10 +115,14 @@ export default function MobileHeader() {
 
           {/* Footer */}
           <div className="p-4 border-t border-slate-100">
-            <div className="text-xs text-slate-400 text-center">
-              JCC · Comissão Estudantil
-            </div>
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all"
+            >
+              <LogOut size={15} /> Terminar sessão
+            </button>
           </div>
+
         </div>
       )}
     </div>

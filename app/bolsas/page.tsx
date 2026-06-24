@@ -1,9 +1,8 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase';
 import { Bolsa, Estudante, BolsaInsert } from '@/types';
-import StatusBadge from '@/components/StatusBadge';
-import { GraduationCap, Plus, X, Search, Loader2, Save, Trash2 } from 'lucide-react';
+import { GraduationCap, Plus, X, Search, Loader2, Save, Trash2, ChevronDown } from 'lucide-react';
 
 const inputCls = `w-full px-4 py-2.5 border-2 border-slate-200 rounded-xl text-sm
   bg-slate-50 text-slate-800 focus:outline-none transition-all`;
@@ -45,6 +44,169 @@ function initials(nome: string) {
   return nome.split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
 }
 
+// ─── Combobox de estudante ────────────────────────────────────────────────────
+function EstudanteCombobox({
+  estudantes,
+  value,
+  onChange,
+}: {
+  estudantes: Estudante[];
+  value: string;
+  onChange: (id: string) => void;
+}) {
+  const [query, setQuery]     = useState('');
+  const [open, setOpen]       = useState(false);
+  const wrapRef               = useRef<HTMLDivElement>(null);
+
+  // Fecha ao clicar fora
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const selected  = estudantes.find(e => e.id === value);
+  const filtered  = estudantes.filter(e =>
+    e.nome.toLowerCase().includes(query.toLowerCase())
+  );
+
+  function select(est: Estudante) {
+    onChange(est.id);
+    setQuery('');
+    setOpen(false);
+  }
+
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setQuery(e.target.value);
+    if (!open) setOpen(true);
+  }
+
+  function handleClear() {
+    onChange('');
+    setQuery('');
+    setOpen(false);
+  }
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <div
+        className="w-full flex items-center gap-2 px-4 py-2.5 border-2 border-slate-200 rounded-xl text-sm bg-slate-50 transition-all cursor-text"
+        style={open ? { borderColor: '#1a7a34', background: 'white' } : {}}
+        onClick={() => { setOpen(true); }}
+      >
+        {/* Estudante seleccionado (pill) */}
+        {selected && !open ? (
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div
+              className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+              style={{ background: '#1a7a34' }}
+            >
+              {initials(selected.nome)}
+            </div>
+            <span className="text-slate-800 font-medium truncate">{selected.nome}</span>
+          </div>
+        ) : (
+          <input
+            autoFocus={open}
+            value={query}
+            onChange={handleInputChange}
+            onFocus={() => setOpen(true)}
+            placeholder={selected ? selected.nome : 'Pesquisar estudante...'}
+            className="flex-1 bg-transparent text-slate-800 placeholder:text-slate-400 focus:outline-none text-sm"
+          />
+        )}
+
+        <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
+          {selected && (
+            <button
+              type="button"
+              onClick={e => { e.stopPropagation(); handleClear(); }}
+              className="w-5 h-5 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition-all"
+            >
+              <X size={12} />
+            </button>
+          )}
+          <ChevronDown
+            size={15}
+            className={`text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}
+          />
+        </div>
+      </div>
+
+      {/* Dropdown */}
+      {open && (
+        <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden">
+          {/* Barra de pesquisa interna (quando já há selecção) */}
+          {selected && (
+            <div className="px-3 pt-3 pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-lg border border-slate-200">
+                <Search size={13} className="text-slate-400 flex-shrink-0" />
+                <input
+                  autoFocus
+                  value={query}
+                  onChange={e => setQuery(e.target.value)}
+                  placeholder="Pesquisar..."
+                  className="flex-1 bg-transparent text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="max-h-52 overflow-y-auto py-1.5">
+            {filtered.length === 0 ? (
+              <div className="px-4 py-6 text-center text-sm text-slate-400">
+                Nenhum estudante encontrado
+              </div>
+            ) : (
+              filtered.map(est => {
+                const isSelected = est.id === value;
+                return (
+                  <button
+                    key={est.id}
+                    type="button"
+                    onClick={() => select(est)}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
+                      isSelected
+                        ? 'bg-green-50 text-green-800'
+                        : 'text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                      style={{ background: isSelected ? '#1a7a34' : '#94a3b8' }}
+                    >
+                      {initials(est.nome)}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium truncate">{est.nome}</div>
+                      {est.universidade && (
+                        <div className="text-xs text-slate-400 truncate">{est.universidade}</div>
+                      )}
+                    </div>
+                    {isSelected && (
+                      <div className="ml-auto flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center"
+                        style={{ background: '#1a7a34' }}>
+                        <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+                          <path d="M1.5 4L3.5 6L6.5 2" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                    )}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 const FORM_VAZIO: BolsaInsert = {
   estudante_id: '',
   tipo:         'Parcial',
@@ -60,17 +222,17 @@ const FORM_VAZIO: BolsaInsert = {
 export default function BolsasPage() {
   const supabase = createClient();
 
-  const [bolsas, setBolsas]           = useState<(Bolsa & { estudante: Estudante })[]>([]);
-  const [estudantes, setEstudantes]   = useState<Estudante[]>([]);
-  const [loading, setLoading]         = useState(true);
-  const [search, setSearch]           = useState('');
+  const [bolsas, setBolsas]             = useState<(Bolsa & { estudante: Estudante })[]>([]);
+  const [estudantes, setEstudantes]     = useState<Estudante[]>([]);
+  const [loading, setLoading]           = useState(true);
+  const [search, setSearch]             = useState('');
   const [filtroStatus, setFiltroStatus] = useState('');
-  const [showModal, setShowModal]     = useState(false);
-  const [saving, setSaving]           = useState(false);
-  const [error, setError]             = useState('');
-  const [deleteId, setDeleteId]       = useState<string | null>(null);
-  const [deleting, setDeleting]       = useState(false);
-  const [form, setForm]               = useState<BolsaInsert>(FORM_VAZIO);
+  const [showModal, setShowModal]       = useState(false);
+  const [saving, setSaving]             = useState(false);
+  const [error, setError]               = useState('');
+  const [deleteId, setDeleteId]         = useState<string | null>(null);
+  const [deleting, setDeleting]         = useState(false);
+  const [form, setForm]                 = useState<BolsaInsert>(FORM_VAZIO);
 
   const carregar = useCallback(async () => {
     setLoading(true);
@@ -94,6 +256,17 @@ export default function BolsasPage() {
     setForm(FORM_VAZIO);
     setError('');
     setShowModal(true);
+  }
+
+  function handleEstudanteChange(id: string) {
+    const est = estudantes.find(e => e.id === id);
+    setForm(f => ({
+      ...f,
+      estudante_id: id,
+      instituicao: est?.universidade || f.instituicao,
+      curso:       est?.curso        || f.curso,
+    }));
+    setError('');
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -140,17 +313,6 @@ export default function BolsasPage() {
   const totalIntegrais = bolsas.filter(b => b.tipo === 'Integral').length;
   const totalParciais  = bolsas.filter(b => b.tipo === 'Parcial').length;
 
-  // Preenche automaticamente instituição e curso ao seleccionar estudante
-  function handleEstudanteChange(id: string) {
-    const est = estudantes.find(e => e.id === id);
-    setForm(f => ({
-      ...f,
-      estudante_id: id,
-      instituicao: est?.universidade || f.instituicao,
-      curso:       est?.curso        || f.curso,
-    }));
-  }
-
   return (
     <div className="p-6 lg:p-8 animate-fade-in">
 
@@ -175,10 +337,10 @@ export default function BolsasPage() {
       {/* Cards resumo */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
-          { label: 'Total de Bolsas',  value: bolsas.length,   icon: '🎓', cor: '#1a7a34', bg: 'bg-green-50 border-green-100' },
-          { label: 'Activas',          value: totalActivas,    icon: '✅', cor: '#1a7a34', bg: 'bg-green-50 border-green-100' },
-          { label: 'Integrais',        value: totalIntegrais,  icon: '💯', cor: '#1d4ed8', bg: 'bg-blue-50 border-blue-100'   },
-          { label: 'Parciais',         value: totalParciais,   icon: '📊', cor: '#92400e', bg: 'bg-amber-50 border-amber-100' },
+          { label: 'Total de Bolsas', value: bolsas.length,  icon: '🎓', cor: '#1a7a34', bg: 'bg-green-50 border-green-100' },
+          { label: 'Activas',         value: totalActivas,   icon: '✅', cor: '#1a7a34', bg: 'bg-green-50 border-green-100' },
+          { label: 'Integrais',       value: totalIntegrais, icon: '💯', cor: '#1d4ed8', bg: 'bg-blue-50 border-blue-100'   },
+          { label: 'Parciais',        value: totalParciais,  icon: '📊', cor: '#92400e', bg: 'bg-amber-50 border-amber-100' },
         ].map(s => (
           <div key={s.label} className={`rounded-2xl border p-4 ${s.bg}`}>
             <div className="text-xl mb-2">{s.icon}</div>
@@ -229,18 +391,15 @@ export default function BolsasPage() {
         <div className="grid gap-4">
           {filtered.map(b => (
             <div key={b.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex items-start gap-4 hover:shadow-md transition-shadow">
-              {/* Avatar */}
               <div className="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
                 style={{ background: '#1a7a34' }}>
                 {initials(b.estudante?.nome || '?')}
               </div>
-
-              {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2 flex-wrap">
                   <div>
                     <div className="font-bold text-slate-900 text-sm">{b.estudante?.nome || '—'}</div>
-                    <div className="text-xs text-slate-400 mt-0.5">{b.instituicao} {b.curso ? `· ${b.curso}` : ''}</div>
+                    <div className="text-xs text-slate-400 mt-0.5">{b.instituicao}{b.curso ? ` · ${b.curso}` : ''}</div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <BolsaStatusBadge status={b.status} />
@@ -253,7 +412,6 @@ export default function BolsasPage() {
                     </span>
                   </div>
                 </div>
-
                 <div className="flex items-center gap-4 mt-3 flex-wrap">
                   <div className="text-xs text-slate-500">
                     📅 Início: <span className="font-medium text-slate-700">
@@ -275,15 +433,12 @@ export default function BolsasPage() {
                     </div>
                   )}
                 </div>
-
                 {b.observacoes && (
                   <div className="mt-2 text-xs text-slate-500 bg-slate-50 rounded-lg px-3 py-2">
                     {b.observacoes}
                   </div>
                 )}
               </div>
-
-              {/* Remover */}
               <button onClick={() => setDeleteId(b.id)}
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:bg-red-50 hover:text-red-500 transition-all flex-shrink-0">
                 <Trash2 size={15} />
@@ -313,13 +468,11 @@ export default function BolsasPage() {
             <form onSubmit={handleSave} className="p-6 space-y-4">
 
               <Field label="Estudante" required>
-                <select value={form.estudante_id} onChange={e => handleEstudanteChange(e.target.value)}
-                  className={inputCls} onFocus={onFocus} onBlur={onBlur}>
-                  <option value="">Seleccionar estudante...</option>
-                  {estudantes.map(e => (
-                    <option key={e.id} value={e.id}>{e.nome}</option>
-                  ))}
-                </select>
+                <EstudanteCombobox
+                  estudantes={estudantes}
+                  value={form.estudante_id}
+                  onChange={handleEstudanteChange}
+                />
               </Field>
 
               <div className="grid grid-cols-2 gap-4">
