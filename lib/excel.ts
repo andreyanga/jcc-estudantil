@@ -5,9 +5,12 @@ export function exportToExcel(estudantes: Estudante[], filename = 'estudantes_jc
   const data = estudantes.map((e, i) => ({
     'Nº':            i + 1,
     'Nome Completo': e.nome,
+    'Sexo':          e.sexo === 'M' ? 'Masculino' : e.sexo === 'F' ? 'Feminino' : '—',
+    'Idade':         e.idade || '—',
     'Telefone':      e.telefone,
+    'Email':         e.email || '—',
     'Nível':         e.nivel,
-    'Ano/Classe':    e.ano_classe,
+    'Ano/Classe':    e.ano_classe || '—',
     'Universidade':  e.universidade || '—',
     'Curso':         e.curso        || '—',
     'Província':     e.provincia,
@@ -18,23 +21,44 @@ export function exportToExcel(estudantes: Estudante[], filename = 'estudantes_jc
 
   const ws = XLSX.utils.json_to_sheet(data);
   ws['!cols'] = [
-    {wch:5},{wch:32},{wch:15},{wch:14},
-    {wch:12},{wch:22},{wch:24},{wch:16},{wch:12},{wch:30},{wch:16},
+    {wch:5},{wch:32},{wch:12},{wch:8},{wch:15},
+    {wch:28},{wch:14},{wch:12},{wch:22},{wch:24},
+    {wch:16},{wch:12},{wch:30},{wch:16},
   ];
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Estudantes');
 
   // Resumo
+  const totalM    = estudantes.filter(e => e.sexo === 'M').length;
+  const totalF    = estudantes.filter(e => e.sexo === 'F').length;
+  const comIdade  = estudantes.filter(e => e.idade).map(e => e.idade as number);
+  const mediaIdade = comIdade.length
+    ? Math.round(comIdade.reduce((a, b) => a + b, 0) / comIdade.length)
+    : '—';
+
   const resumo = [
     ['JCC — Comissão Estudantil'],
     ['Gerado em:', new Date().toLocaleDateString('pt-AO')],
     [''],
+    ['ESTATÍSTICAS GERAIS'],
     ['Total de estudantes:', estudantes.length],
+    ['Masculino:',           totalM],
+    ['Feminino:',            totalF],
+    ['Não especificado:',    estudantes.length - totalM - totalF],
+    ['Média de idades:',     mediaIdade],
+    [''],
+    ['POR NÍVEL'],
     ['Universidade:', estudantes.filter(e => e.nivel === 'Universidade').length],
     ['Ensino Médio:', estudantes.filter(e => e.nivel === 'Médio').length],
+    ['Finalistas:',   estudantes.filter(e => e.nivel === 'Finalista').length],
+    [''],
+    ['POR STATUS'],
+    ['Activos:',    estudantes.filter(e => e.status === 'Activo').length],
     ['Empregados:', estudantes.filter(e => e.status === 'Empregado').length],
+    ['Inactivos:',  estudantes.filter(e => e.status === 'Inactivo').length],
   ];
+
   const ws2 = XLSX.utils.aoa_to_sheet(resumo);
   ws2['!cols'] = [{wch:28},{wch:20}];
   XLSX.utils.book_append_sheet(wb, ws2, 'Resumo');
@@ -44,21 +68,22 @@ export function exportToExcel(estudantes: Estudante[], filename = 'estudantes_jc
 
 export function exportBolsasToExcel(bolsas: (Bolsa & { estudante?: Estudante })[]) {
   const data = bolsas.map((b, i) => ({
-    'Nº':            i + 1,
-    'Estudante':     b.estudante?.nome || '—',
-    'Tipo':          b.tipo,
-    'Instituição':   b.instituicao,
-    'Curso':         b.curso        || '—',
-    'Valor (AOA)':   b.valor        || '—',
-    'Data Início':   new Date(b.data_inicio).toLocaleDateString('pt-AO'),
-    'Data Fim':      b.data_fim ? new Date(b.data_fim).toLocaleDateString('pt-AO') : '—',
-    'Status':        b.status,
-    'Observações':   b.observacoes  || '',
+    'Nº':          i + 1,
+    'Estudante':   b.estudante?.nome || '—',
+    'Sexo':        b.estudante?.sexo === 'M' ? 'Masculino' : b.estudante?.sexo === 'F' ? 'Feminino' : '—',
+    'Tipo':        b.tipo,
+    'Instituição': b.instituicao,
+    'Curso':       b.curso    || '—',
+    'Valor (AOA)': b.valor    || '—',
+    'Data Início': new Date(b.data_inicio).toLocaleDateString('pt-AO'),
+    'Data Fim':    b.data_fim ? new Date(b.data_fim).toLocaleDateString('pt-AO') : '—',
+    'Status':      b.status,
+    'Observações': b.observacoes || '',
   }));
 
   const ws = XLSX.utils.json_to_sheet(data);
   ws['!cols'] = [
-    {wch:5},{wch:32},{wch:12},{wch:22},
+    {wch:5},{wch:32},{wch:12},{wch:12},{wch:22},
     {wch:22},{wch:14},{wch:14},{wch:14},{wch:12},{wch:30},
   ];
 

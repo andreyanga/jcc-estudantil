@@ -52,12 +52,13 @@ export default function EstudantesPage() {
         e.nome.toLowerCase().includes(q) ||
         e.telefone.includes(q) ||
         (e.universidade || '').toLowerCase().includes(q) ||
-        (e.curso || '').toLowerCase().includes(q)
+        (e.curso || '').toLowerCase().includes(q) ||
+        (e.email || '').toLowerCase().includes(q)
       );
     }
-    if (filtroStatus) lista = lista.filter(e => e.status    === filtroStatus);
-    if (filtroProv)   lista = lista.filter(e => e.provincia === filtroProv);
-    if (filtroNivel)  lista = lista.filter(e => e.nivel     === filtroNivel);
+    if (filtroStatus) lista = lista.filter(e => e.status     === filtroStatus);
+    if (filtroProv)   lista = lista.filter(e => e.provincia  === filtroProv);
+    if (filtroNivel)  lista = lista.filter(e => e.nivel      === filtroNivel);
     if (filtroAno)    lista = lista.filter(e => e.ano_classe === filtroAno);
     setFiltered(lista);
     setPage(1);
@@ -91,14 +92,14 @@ export default function EstudantesPage() {
   };
 
   return (
-    <div className="p-6 lg:p-8 animate-fade-in">
+    <div className="p-4 lg:p-8 animate-fade-in">
 
       {/* Cabeçalho */}
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
           <div className="flex items-center gap-3 mb-1">
             <div className="w-1 h-7 rounded-full" style={{ background: '#1a7a34' }} />
-            <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Sora, sans-serif' }}>
+            <h1 className="text-xl lg:text-2xl font-bold text-slate-900" style={{ fontFamily: 'Sora, sans-serif' }}>
               Estudantes
             </h1>
           </div>
@@ -130,7 +131,7 @@ export default function EstudantesPage() {
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Buscar por nome, telefone, universidade..."
+              placeholder="Buscar por nome, telefone, universidade, curso..."
               className="w-full pl-9 pr-4 py-2.5 border-2 border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none transition-all"
               onFocus={inputFocus} onBlur={inputBlur}
             />
@@ -159,8 +160,6 @@ export default function EstudantesPage() {
 
         {showFiltros && (
           <div className="px-4 pb-4 pt-3 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-
-            {/* Status */}
             <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)}
               className="px-3 py-2.5 border-2 border-slate-200 rounded-xl text-sm bg-slate-50 text-slate-700 focus:outline-none transition-all"
               onFocus={inputFocus} onBlur={inputBlur}>
@@ -170,7 +169,6 @@ export default function EstudantesPage() {
               <option>Empregado</option>
             </select>
 
-            {/* Nível */}
             <select value={filtroNivel} onChange={e => setFiltroNivel(e.target.value)}
               className="px-3 py-2.5 border-2 border-slate-200 rounded-xl text-sm bg-slate-50 text-slate-700 focus:outline-none transition-all"
               onFocus={inputFocus} onBlur={inputBlur}>
@@ -180,7 +178,6 @@ export default function EstudantesPage() {
               <option value="Finalista">Finalista</option>
             </select>
 
-            {/* Província */}
             <select value={filtroProv} onChange={e => setFiltroProv(e.target.value)}
               className="px-3 py-2.5 border-2 border-slate-200 rounded-xl text-sm bg-slate-50 text-slate-700 focus:outline-none transition-all"
               onFocus={inputFocus} onBlur={inputBlur}>
@@ -188,7 +185,6 @@ export default function EstudantesPage() {
               {PROVINCIAS_ANGOLA.map(p => <option key={p}>{p}</option>)}
             </select>
 
-            {/* Ano / Classe */}
             <select value={filtroAno} onChange={e => setFiltroAno(e.target.value)}
               className="px-3 py-2.5 border-2 border-slate-200 rounded-xl text-sm bg-slate-50 text-slate-700 focus:outline-none transition-all"
               onFocus={inputFocus} onBlur={inputBlur}>
@@ -200,7 +196,6 @@ export default function EstudantesPage() {
                 {ANOS_UNIVERSIDADE.map(a => <option key={a} value={a}>{a}</option>)}
               </optgroup>
             </select>
-
           </div>
         )}
       </div>
@@ -237,6 +232,7 @@ export default function EstudantesPage() {
                   <th className="text-left px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Nome</th>
                   <th className="text-left px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:table-cell">Telefone</th>
                   <th className="text-left px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider hidden lg:table-cell">Nível</th>
+                  <th className="text-left px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider hidden lg:table-cell">Curso</th>
                   <th className="text-left px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider hidden xl:table-cell">Universidade</th>
                   <th className="text-left px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider hidden xl:table-cell">Província</th>
                   <th className="text-left px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
@@ -250,11 +246,11 @@ export default function EstudantesPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                          style={{ background: e.nivel === 'Finalista' ? '#6d28d9' : '#1a7a34' }}>
+                          style={{ background: e.nivel === 'Finalista' ? '#92400e' : e.nivel === 'Médio' ? '#6d28d9' : '#1a7a34' }}>
                           {initials(e.nome)}
                         </div>
                         <div className="min-w-0">
-                          <div className="font-semibold text-slate-800 text-sm truncate max-w-[150px]">{e.nome}</div>
+                          <div className="font-semibold text-slate-800 text-sm truncate max-w-[140px]">{e.nome}</div>
                           <div className="text-xs text-slate-400 md:hidden">{e.telefone}</div>
                         </div>
                       </div>
@@ -262,6 +258,9 @@ export default function EstudantesPage() {
                     <td className="px-4 py-3 text-sm text-slate-500 hidden md:table-cell">{e.telefone}</td>
                     <td className="px-4 py-3 hidden lg:table-cell">
                       <NivelBadge nivel={e.nivel} ano_classe={e.ano_classe} />
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-600 hidden lg:table-cell max-w-[140px]">
+                      <span className="truncate block">{e.curso || <span className="text-slate-300">—</span>}</span>
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-600 hidden xl:table-cell">
                       {e.universidade || <span className="text-slate-300">—</span>}
@@ -325,47 +324,57 @@ export default function EstudantesPage() {
       {verEstudante && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           onClick={() => setVerEstudante(null)}>
-          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl animate-fade-in"
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl animate-fade-in max-h-[90vh] overflow-y-auto"
             onClick={ex => ex.stopPropagation()}>
             <div className="p-6">
               <div className="flex items-start justify-between mb-5">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold"
-                    style={{ background: verEstudante.nivel === 'Finalista' ? '#6d28d9' : '#1a7a34' }}>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0"
+                    style={{ background: verEstudante.nivel === 'Finalista' ? '#92400e' : verEstudante.nivel === 'Médio' ? '#6d28d9' : '#1a7a34' }}>
                     {initials(verEstudante.nome)}
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-900" style={{ fontFamily: 'Sora, sans-serif' }}>
                       {verEstudante.nome}
                     </h3>
-                    <div className="text-xs text-slate-400">
+                    <div className="text-xs text-slate-400 mt-0.5">
                       {verEstudante.nivel === 'Médio'
                         ? 'Ensino Médio'
                         : verEstudante.nivel === 'Finalista'
-                        ? '🏆 Finalista'
-                        : verEstudante.universidade || 'Sem universidade'}
+                        ? `🏆 Finalista · ${verEstudante.universidade || '—'}`
+                        : verEstudante.universidade || 'Sem universidade'
+                      }
                     </div>
                   </div>
                 </div>
-                <button onClick={() => setVerEstudante(null)} className="text-slate-400 hover:text-slate-700">
+                <button onClick={() => setVerEstudante(null)} className="text-slate-400 hover:text-slate-700 flex-shrink-0">
                   <X size={20} />
                 </button>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { l: 'Telefone',      v: verEstudante.telefone },
-                  { l: 'Província',     v: verEstudante.provincia },
-                  { l: 'Nível',         v: verEstudante.nivel },
-                  { l: 'Ano/Classe',    v: verEstudante.ano_classe || '—' },
-                  { l: 'Universidade',  v: verEstudante.universidade || '—' },
-                  { l: 'Curso',         v: verEstudante.curso || '—' },
+                  { l: 'Telefone',    v: verEstudante.telefone || '—'                                                                       },
+                  { l: 'Província',   v: verEstudante.provincia                                                                              },
+                  { l: 'Sexo',        v: verEstudante.sexo === 'M' ? 'Masculino' : verEstudante.sexo === 'F' ? 'Feminino' : '—'             },
+                  { l: 'Idade',       v: verEstudante.idade ? `${verEstudante.idade} anos` : '—'                                             },
+                  { l: 'Nível',       v: verEstudante.nivel                                                                                  },
+                  { l: 'Ano/Classe',  v: verEstudante.ano_classe || '—'                                                                     },
+                  { l: 'Universidade',v: verEstudante.universidade || '—'                                                                    },
+                  { l: 'Curso',       v: verEstudante.curso || '—'                                                                          },
                 ].map(({ l, v }) => (
                   <div key={l} className="bg-slate-50 rounded-xl p-3">
                     <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{l}</div>
                     <div className="text-sm font-medium text-slate-800">{v}</div>
                   </div>
                 ))}
+
+                {verEstudante.email && (
+                  <div className="col-span-2 bg-slate-50 rounded-xl p-3">
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Email</div>
+                    <div className="text-sm font-medium text-slate-800">{verEstudante.email}</div>
+                  </div>
+                )}
                 {verEstudante.observacoes && (
                   <div className="col-span-2 bg-slate-50 rounded-xl p-3">
                     <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Observações</div>

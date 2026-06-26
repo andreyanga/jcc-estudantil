@@ -14,6 +14,9 @@ export interface Estudante {
   provincia: string;
   status: EstudanteStatus;
   observacoes: string;
+  email: string;
+  sexo: '' | 'M' | 'F';
+  idade: number | null;
   created_at: string;
   updated_at: string;
 }

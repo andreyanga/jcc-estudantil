@@ -62,9 +62,12 @@ export default function EstudanteForm({ initialData, mode }: Props) {
     provincia:    initialData?.provincia    || 'Luanda',
     status:       initialData?.status       || 'Activo',
     observacoes:  initialData?.observacoes  || '',
+    email:        initialData?.email        || '',
+    sexo:         initialData?.sexo         || '',
+    idade:        initialData?.idade        || null,
   });
 
-  function set(field: keyof EstudanteInsert, value: string) {
+  function set(field: keyof EstudanteInsert, value: any) {
     setForm(f => ({ ...f, [field]: value }));
     setError('');
   }
@@ -81,10 +84,8 @@ export default function EstudanteForm({ initialData, mode }: Props) {
       setError('Preenche os campos obrigatórios: Nome, Telefone e Província.');
       return;
     }
-
-    // Ano/classe obrigatório só para Médio e Universidade
     if ((form.nivel === 'Médio' || form.nivel === 'Universidade') && !form.ano_classe) {
-      setError(`Selecciona a ${form.nivel === 'Médio' ? 'Classe' : 'Ano'}.`);
+      setError(`Selecciona ${form.nivel === 'Médio' ? 'a Classe' : 'o Ano'}.`);
       return;
     }
 
@@ -101,6 +102,9 @@ export default function EstudanteForm({ initialData, mode }: Props) {
       provincia:    form.provincia,
       status:       form.status,
       observacoes:  form.observacoes?.trim() || '',
+      email:        form.email?.trim()       || '',
+      sexo:         form.sexo                || '',
+      idade:        form.idade               || null,
     };
 
     if (mode === 'create') {
@@ -150,6 +154,7 @@ export default function EstudanteForm({ initialData, mode }: Props) {
               />
             </Field>
           </div>
+
           <Field label="Nº de Telefone" required>
             <input
               value={form.telefone} onChange={e => set('telefone', e.target.value)}
@@ -157,6 +162,34 @@ export default function EstudanteForm({ initialData, mode }: Props) {
               className={inputCls} onFocus={onFocus} onBlur={onBlur}
             />
           </Field>
+
+          <Field label="Email">
+            <input
+              value={form.email || ''} onChange={e => set('email', e.target.value)}
+              placeholder="exemplo@gmail.com" type="email"
+              className={inputCls} onFocus={onFocus} onBlur={onBlur}
+            />
+          </Field>
+
+          <Field label="Sexo">
+            <select
+              value={form.sexo || ''} onChange={e => set('sexo', e.target.value)}
+              className={inputCls} onFocus={onFocus} onBlur={onBlur}>
+              <option value="">Não especificado</option>
+              <option value="M">Masculino</option>
+              <option value="F">Feminino</option>
+            </select>
+          </Field>
+
+          <Field label="Idade">
+            <input
+              value={form.idade ?? ''} type="number" min={14} max={60}
+              onChange={e => set('idade', e.target.value ? Number(e.target.value) : null)}
+              placeholder="ex: 22"
+              className={inputCls} onFocus={onFocus} onBlur={onBlur}
+            />
+          </Field>
+
           <Field label="Província" required>
             <select
               value={form.provincia} onChange={e => set('provincia', e.target.value)}
@@ -164,6 +197,7 @@ export default function EstudanteForm({ initialData, mode }: Props) {
               {PROVINCIAS_ANGOLA.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
           </Field>
+
           <Field label="Status">
             <select
               value={form.status} onChange={e => set('status', e.target.value as any)}
@@ -235,7 +269,7 @@ export default function EstudanteForm({ initialData, mode }: Props) {
             </Field>
           )}
 
-          {/* Universidade e Curso — para Universidade e Finalista */}
+          {/* Universidade e Curso — Universidade e Finalista */}
           {(form.nivel === 'Universidade' || form.nivel === 'Finalista') && (
             <>
               <Field label="Universidade / Instituto">
